@@ -88,7 +88,12 @@ AliasesToExport = 'copyoptdefs', 'copyoptvals'
 # ModuleList = @()
 
 # List of all files packaged with this module
-# FileList = @()
+FileList = @(
+    'en-US\about_DHCPMigration.Help.txt',
+    'en-US\DHCPMigration.psm1-Help.xml',
+    'DHCPMigration.psd1',
+    'DHCPMigration.psm1'
+)
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
@@ -99,7 +104,7 @@ PrivateData = @{
         # Tags = @()
 
         # A URL to the license for this module.
-        # LicenseUri = ''
+        LicenseUri = 'https://github.com/Yevrag35/DHCPMigration/blob/master/LICENSE'
 
         # A URL to the main website for this project.
         ProjectUri = 'https://github.com/Yevrag35/DHCPMigration'
@@ -115,7 +120,7 @@ PrivateData = @{
 } # End of PrivateData hashtable
 
 # HelpInfo URI of this module
-# HelpInfoURI = ''
+HelpInfoURI = 'https://github.com/Yevrag35/DHCPMigration/wiki'
 
 # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
 # DefaultCommandPrefix = ''

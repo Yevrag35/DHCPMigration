@@ -1,6 +1,9 @@
 ﻿#region MODULE FUNCTIONS
 Function Copy-DhcpServerOptionDefinition()
 {
+    <#
+        .EXTERNALHELP en-US\DHCPMigration.psm1-Help.xml
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, PositionalBinding=$false,
         DefaultParameterSetName='ByCredential')]
     [alias("copyoptdefs")]
@@ -101,6 +104,9 @@ Function Copy-DhcpServerOptionDefinition()
 
 Function Copy-DhcpServerOptionValue()
 {
+    <#
+        .EXTERNALHELP en-US\DHCPMigration.psm1-Help.xml
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, PositionalBinding=$false,
         DefaultParameterSetName='ByCredential')]
     [alias("copyoptvals")]
@@ -117,6 +123,9 @@ Function Copy-DhcpServerOptionValue()
         [parameter(Mandatory=$false, Position=2)]
         [alias("id")]
         [int[]] $OptionId,
+
+        [parameter(Mandatory=$false)]
+        [switch] $OverwriteExisting,
 
         [parameter(Mandatory=$false, ParameterSetName='ByCredential')]
         [alias("toc")]
@@ -159,16 +168,22 @@ Function Copy-DhcpServerOptionValue()
         {
             $oldVals = $oldVals | Where-Object { $_.OptionId -in $OptionId };
         }
-
+        $from.Remove("ErrorAction");
         foreach ($val in $oldVals)
         {
-            Set-DhcpServerv4OptionValue @to -OptionId $val.OptionId -Value $val.Value;
+            if ($PSBoundParameters.ContainsKey("OverwriteExisting") -or $($null -eq $(Get-DhcpServerv4OptionValue @to -OptionId $val.OptionId -ErrorAction SilentlyContinue)))
+            {
+                Set-DhcpServerv4OptionValue @to -OptionId $val.OptionId -Value $val.Value;
+            }
         }
     }
 }
 
 Function Copy-DhcpPolicy()
 {
+    <#
+        .EXTERNALHELP en-US\DHCPMigration.psm1-Help.xml
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, PositionalBinding=$false,
         DefaultParameterSetName='ServerPoliciesByCredential')]
     param
@@ -270,6 +285,9 @@ Function Copy-DhcpPolicy()
 
 Function Copy-DhcpScope()
 {
+    <#
+        .EXTERNALHELP en-US\DHCPMigration.psm1-Help.xml
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, PositionalBinding=$false,
         DefaultParameterSetName='ByCredential')]
     param
@@ -366,6 +384,9 @@ Function Copy-DhcpScope()
 
 Function Copy-DhcpLease()
 {
+    <#
+        .EXTERNALHELP en-US\DHCPMigration.psm1-Help.xml
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, PositionalBinding=$false,
         DefaultParameterSetName='ByCredential')]
     param
