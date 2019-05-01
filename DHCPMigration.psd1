@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.0.0'
+ModuleVersion = '1.0.1'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -100,8 +100,11 @@ PrivateData = @{
 
     PSData = @{
 
+        ExternalModuleDependencies = @('DhcpServer')
+
         # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+        Tags = @('Dhcp', 'dynamic', 'host', 'configuration', 'protocol', 'migration', 'move', 'scope', 'lease', 'policy', 'policies',
+            'server', 'copy', 'ipv4', 'option', 'id', 'value', 'reservation', 'add', 'get' ,'set')
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/Yevrag35/DHCPMigration/blob/master/LICENSE'

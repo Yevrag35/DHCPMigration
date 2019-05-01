@@ -1,4 +1,6 @@
 ﻿# DHCP Migration
+[![version](https://img.shields.io/powershellgallery/v/DHCPMigration.svg)](https://www.powershellgallery.com/packages/DHCPMigration)
+[![downloads](https://img.shields.io/powershellgallery/dt/DHCPMigration.svg?label=downloads)](https://www.powershellgallery.com/stats/packages/DHCPMigration?groupby=Version)
 
 This module is intended to help sysadmins in the process of migrating 'pre-failover capable' DHCP servers.  It has the ability to copy all sorts of information from one server to another:
 
