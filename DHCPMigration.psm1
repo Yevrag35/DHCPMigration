@@ -304,6 +304,9 @@ Function Copy-DhcpScope()
         [alias("sid")]
         [ipaddress[]] $ScopeId,
 
+        [parameter(Mandatory=$false)]
+        [switch] $ExcludeScopeOptions,
+
         [parameter(Mandatory=$false, ParameterSetName='ByCredential')]
         [alias("toc")]
         [pscredential] $ToCredential,
@@ -377,6 +380,18 @@ Function Copy-DhcpScope()
 
             Write-Debug "Scope Args: $($addScopeArgs | Out-String)";
             Add-DhcpServerv4Scope @to @addScopeArgs;
+
+            if (-not $PSBoundParameters.ContainsKey("ExcludeScopeOptions"))
+            {
+                $optVals = @(Get-DhcpServerv4OptionValue @from -ScopeId $scope.ScopeId -All);
+                if ($optVals.Count -gt 0)
+                {
+                    foreach ($val in $optVals)
+                    {
+                        Set-DhcpServerv4OptionValue @to -ScopeId $scope.ScopeId -OptionId $val.OptionId -Value $val.Value;
+                    }
+                }
+            }
         }
         Write-ScriptProgress -Activity "Scopes" -Id 1 -Completed;
     }

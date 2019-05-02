@@ -1015,6 +1015,18 @@
 				</dev:type>
 				<dev:defaultValue></dev:defaultValue>
 			</command:parameter>
+			<command:parameter required="false" globbing="false" pipelineInput="False" variableLength="false" position="named">
+				<maml:name>ExcludeScopeOptions</maml:name>
+				<maml:description>
+					<maml:para>Indicates to not copy the source scope's Option values to the new destination scope.</maml:para>
+				</maml:description>
+				<command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+				<dev:type>
+					<maml:name>SwitchParameter</maml:name>
+					<maml:uri />
+				</dev:type>
+				<dev:defaultValue />
+			</command:parameter>
 		</command:parameters>
 		<command:inputTypes>
 			<!--Inputs-->
