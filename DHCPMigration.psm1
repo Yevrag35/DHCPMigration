@@ -188,10 +188,10 @@ Function Copy-DhcpPolicy()
         DefaultParameterSetName='ServerPoliciesByCredential')]
     param
     (
-        [parameter(Mandatory=$true, Position=0, ParameterSetName='ServerPoliciesByCredential')]
-        [parameter(Mandatory=$true, Position=0, ParameterSetName='ScopePoliciesByCredential')]
+        [parameter(Mandatory=$false, Position=0, ParameterSetName='ServerPoliciesByCredential')]
+        [parameter(Mandatory=$false, Position=0, ParameterSetName='ScopePoliciesByCredential')]
         [alias("t", "to")]
-        [string] $ToServer,
+        [string] $ToServer = $env:COMPUTERNAME,
 
         [parameter(Mandatory=$true, Position=1, ParameterSetName='ServerPoliciesByCredential')]
         [parameter(Mandatory=$true, Position=1, ParameterSetName='ScopePoliciesByCredential')]
@@ -241,14 +241,6 @@ Function Copy-DhcpPolicy()
             $to.ScopeId = $PSBoundParameters["ToScopeId"];
             $from.ScopeId = $PSBoundParameters["FromScopeId"];
         }
-        if ($PSBoundParameters.ContainsKey("Confirm"))
-        {
-            $to.Confirm = $PSBoundParameters["Confirm"];
-        }
-        else
-        {
-            $to.Confirm = $true;
-        }
         if ($PSBoundParameters.ContainsKey("Verbose"))
         {
             $to.Verbose = $PSBoundParameters["Verbose"];
@@ -267,6 +259,14 @@ Function Copy-DhcpPolicy()
         }
         $properties = $allPolicies[0] | Get-Member -MemberType Property | Where-Object { $_.Name -ne "PSComuputerName" } | Select-Object -ExpandProperty Name;
 
+        if ($PSBoundParameters.ContainsKey("Confirm"))
+        {
+            $to.Confirm = $PSBoundParameters["Confirm"];
+        }
+        else
+        {
+            $to.Confirm = $true;
+        }
         foreach ($p in $allPolicies)
         {
             $hash = @{};
@@ -292,9 +292,9 @@ Function Copy-DhcpScope()
         DefaultParameterSetName='ByCredential')]
     param
     (
-        [parameter(Mandatory=$true, Position=0, ParameterSetName='ByCredential')]
+        [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCredential')]
         [alias("t", "to")]
-        [string] $ToServer,
+        [string] $ToServer = $env:COMPUTERNAME,
 
         [parameter(Mandatory=$true, Position=1, ParameterSetName='ByCredential')]
         [alias("f", "from")]
@@ -327,14 +327,6 @@ Function Copy-DhcpScope()
         $to = $private:bank.To;
         $from = $private:bank.From;
 
-        if ($PSBoundParameters.ContainsKey("Confirm"))
-        {
-            $to.Confirm = $PSBoundParameters["Confirm"];
-        }
-        else
-        {
-            $to.Confirm = $true;
-        }
         if ($PSBoundParameters.ContainsKey("Verbose"))
         {
             $to.Verbose = $PSBoundParameters["Verbose"];
@@ -353,6 +345,14 @@ Function Copy-DhcpScope()
             $allScopes = @(Get-DhcpServerv4Scope @from);
         }
 
+        if ($PSBoundParameters.ContainsKey("Confirm"))
+        {
+            $to.Confirm = $PSBoundParameters["Confirm"];
+        }
+        else
+        {
+            $to.Confirm = $true;
+        }
         for ($i = 1; $i -le $allScopes.Count; $i++)
         {
             $scope = $allScope[$i - 1];
@@ -367,7 +367,7 @@ Function Copy-DhcpScope()
                 Description      = $scope.Description
                 SuperscopeName   = $scope.SuperscopeNames
                 MaxBootpClients  = $scope.MaxBootpClients
-                Type             = $scope.Types
+                Type             = $scope.Type
                 ActivatePolicies = $scope.ActivatePolicies
                 Delay            = $scope.Delay
                 LeaseDuration    = $scope.LeaseDuration
@@ -429,14 +429,6 @@ Function Copy-DhcpLease()
         $to = $private:bank.To;
         $from = $private:bank.From;
 
-        if ($PSBoundParameters.ContainsKey("Confirm"))
-        {
-            $to.Confirm = $PSBoundParameters["Confirm"];
-        }
-        else
-        {
-            $to.Confirm = $true;
-        }
         if ($PSBoundParameters.ContainsKey("Verbose"))
         {
             $to.Verbose = $PSBoundParameters["Verbose"];
@@ -460,6 +452,14 @@ Function Copy-DhcpLease()
         $leases = @($allLeases | Where-Object { $_.AddressState -notlike "*Reservation" });
         Write-Progress -Activity "Lease Copy" -Status "Running steps 1/2..." -Id 1 -PercentComplete 50;
 
+        if ($PSBoundParameters.ContainsKey("Confirm"))
+        {
+            $to.Confirm = $PSBoundParameters["Confirm"];
+        }
+        else
+        {
+            $to.Confirm = $true;
+        }
         for ($i = 1; $i -le $leases.Count; $i++)
         {
             $lease = $leases[$i - 1];
