@@ -9,9 +9,9 @@ Function Copy-DhcpServerOptionDefinition()
     [alias("copyoptdefs")]
     param
     (
-        [parameter(Mandatory=$true, Position=0, ParameterSetName='ByCredential')]
+        [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCredential')]
         [alias("t", "to")]
-        [string] $ToServer,
+        [string] $ToServer = $env:COMPUTERNAME,
 
         [parameter(Mandatory=$true, Position=1, ParameterSetName='ByCredential')]
         [alias("f", "from")]
@@ -112,9 +112,9 @@ Function Copy-DhcpServerOptionValue()
     [alias("copyoptvals")]
     param
     (
-        [parameter(Mandatory=$true, Position=0, ParameterSetName='ByCredential')]
+        [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCredential')]
         [alias("t", "to")]
-        [string] $ToServer,
+        [string] $ToServer = $env:COMPUTERNAME,
 
         [parameter(Mandatory=$true, Position=1, ParameterSetName='ByCredential')]
         [alias("f", "from")]
@@ -408,7 +408,7 @@ Function Copy-DhcpLease()
     (
         [parameter(Mandatory=$false, Position=1, ParameterSetName='ByCredential')]
         [alias("t", "to")]
-        [string] $ToServer,
+        [string] $ToServer = $env:COMPUTERNAME,
 
         [parameter(Mandatory=$true, Position=0, ParameterSetName='ByCredential')]
         [alias("f", "from")]
