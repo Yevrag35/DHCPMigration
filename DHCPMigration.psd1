@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.0.2'
+ModuleVersion = '1.1.1'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -116,7 +116,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Moved ''Confirm'' bound parameter to avoid failing Get-* cmdlets.'
+        ReleaseNotes = 'Fixed confirmation errors; added error handling for existing objects.'
 
     } # End of PSData hashtable
 
