@@ -358,7 +358,7 @@ Function Copy-DhcpScope()
         }
         for ($i = 1; $i -le $allScopes.Count; $i++)
         {
-            $scope = $allScope[$i - 1];
+            $scope = $allScopes[$i - 1];
             Write-ScriptProgress -Activity "Scopes" -Id 1 -Total $allScopes.Count -On $i;
 
             $addScopeArgs = @{
