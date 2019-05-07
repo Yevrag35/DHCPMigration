@@ -42,14 +42,6 @@ Function Copy-DhcpServerOptionDefinition()
         $private:bank = PrepareConnections -SetName $PSCmdlet.ParameterSetName -BoundParameters $PSBoundParameters;
         $to = $private:bank.To;
         $from = $private:bank.From;
-        if ($PSBoundParameters.ContainsKey("Confirm"))
-        {
-            $to.Confirm = $PSBoundParameters["Confirm"];
-        }
-        else
-        {
-            $to.Confirm = $true;
-        }
         if ($PSBoundParameters.ContainsKey("Verbose"))
         {
             $to.Verbose = $PSBoundParameters["Verbose"];
@@ -90,7 +82,7 @@ Function Copy-DhcpServerOptionDefinition()
                     Confirm      = switch ($PSBoundParameters.ContainsKey("Confirm")) { $true { $PSBoundParameters["Confirm"] } $false { $true } }
                     WhatIf       = $PSBoundParameters.ContainsKey("WhatIf")
                 };
-                Write-Verbose $("Executing `"Add-DhcpServerv4OptionDefinition`" on destination server for OptionId {0}..." -f $opt.OptionId);
+                #Write-Verbose $("Executing `"Add-DhcpServerv4OptionDefinition`" on destination server for OptionId {0}..." -f $opt.OptionId);
                 Write-Debug $("Add-DhcpServerv4OptionDefinition arguments:`n`n{0}" -f $($optArgs | Out-String));
                 Add-DhcpServerv4OptionDefinition @to @optArgs;
             }
@@ -148,13 +140,14 @@ Function Copy-DhcpServerOptionValue()
         $private:bank = PrepareConnections -SetName $PSCmdlet.ParameterSetName -BoundParameters $PSBoundParameters;
         $to = $private:bank.To;
         $from = $private:bank.From;
+        $confirmArgs = @{}
         if ($PSBoundParameters.ContainsKey("Confirm"))
         {
-            $to.Confirm = $PSBoundParameters["Confirm"];
+            $confirmArgs.Confirm = $PSBoundParameters["Confirm"];
         }
         else
         {
-            $to.Confirm = $true;
+            $confirmArgs.Confirm = $true;
         }
         if ($PSBoundParameters.ContainsKey("Verbose"))
         {
@@ -171,9 +164,20 @@ Function Copy-DhcpServerOptionValue()
         $from.Remove("ErrorAction");
         foreach ($val in $oldVals)
         {
-            if ($PSBoundParameters.ContainsKey("OverwriteExisting") -or $($null -eq $(Get-DhcpServerv4OptionValue @to -OptionId $val.OptionId -ErrorAction SilentlyContinue)))
+            if ($null -ne $(Get-DhcpServerv4OptionDefinition @to -OptionId $val.OptionId -ErrorAction SilentlyContinue))
             {
-                Set-DhcpServerv4OptionValue @to -OptionId $val.OptionId -Value $val.Value;
+                if ($PSBoundParameters.ContainsKey("OverwriteExisting") -or $($null -eq $(Get-DhcpServerv4OptionValue @to -OptionId $val.OptionId -ErrorAction SilentlyContinue)))
+                {
+                    Set-DhcpServerv4OptionValue @to -OptionId $val.OptionId -Value $val.Value @confirmArgs -ErrorAction Stop;
+                }
+                else
+                {
+                    Write-Warning $("Option {0} has an existing value set. Use the '-OverwriteExisting' switch to override." -f $val.OptionId);
+                }
+            }
+            else
+            {
+                Write-Warning $("Option {0} does NOT exist on destination. Skipping value set." -f $val.OptionId);
             }
         }
     }
@@ -305,6 +309,9 @@ Function Copy-DhcpScope()
         [ipaddress[]] $ScopeId,
 
         [parameter(Mandatory=$false)]
+        [switch] $CopyStateAsIs,
+
+        [parameter(Mandatory=$false)]
         [switch] $ExcludeScopeOptions,
 
         [parameter(Mandatory=$false, ParameterSetName='ByCredential')]
@@ -339,23 +346,23 @@ Function Copy-DhcpScope()
     }
     Process
     {
+        $scopeArgs = @{}
         if ($PSBoundParameters.ContainsKey("ScopeId"))
         {
-            $allScopes = @(Get-DhcpServerv4Scope @from -ScopeId $ScopeId);
+            $scopeArgs.ScopeId = $ScopeId;
         }
-        else
-        {
-            $allScopes = @(Get-DhcpServerv4Scope @from);
-        }
-
+        $allScopes = @(Get-DhcpServerv4Scope @from @scopeArgs);
+        $confirmArgs = @{}
         if ($PSBoundParameters.ContainsKey("Confirm"))
         {
-            $to.Confirm = $PSBoundParameters["Confirm"];
+            $confirmArgs.Confirm = $PSBoundParameters["Confirm"];
         }
         else
         {
-            $to.Confirm = $true;
+            $confirmArgs.Confirm = $true;
         }
+        $needDns = $null -eq $(Get-DhcpServerv4OptionValue @to -OptionId 6 -ErrorAction SilentlyContinue);
+        $needRouter = $null -eq $(Get-DhcpServerv4OptionValue @to -OptionId 3 -ErrorAction SilentlyContinue);
         for ($i = 1; $i -le $allScopes.Count; $i++)
         {
             $scope = $allScopes[$i - 1];
@@ -366,7 +373,7 @@ Function Copy-DhcpScope()
                 SubnetMask       = $scope.SubnetMask
                 StartRange       = $scope.StartRange
                 EndRange         = $scope.EndRange
-                State            = "Inactive"            # We will mark the newly created scope as 'Inactive'.
+                #State            = "Inactive"            # We will mark the newly created scope as 'Inactive'.
                 Description      = $scope.Description
                 SuperscopeName   = $scope.SuperscopeNames
                 MaxBootpClients  = $scope.MaxBootpClients
@@ -377,19 +384,75 @@ Function Copy-DhcpScope()
                 NapEnable        = $scope.NapEnable
                 NapProfile       = $scope.NapProfile
             };
+            
+            if ($PSBoundParameters.ContainsKey("RetainStatus"))
+            {
+                $addScopeArgs.State = $scope.State;
+            }
+            else
+            {
+                $addScopeArgs.State = "Inactive";
+            }
 
             Write-Debug "Scope Args: $($addScopeArgs | Out-String)";
-            Add-DhcpServerv4Scope @to @addScopeArgs;
+            try
+            {
+                Add-DhcpServerv4Scope @to @addScopeArgs @confirmArgs -ErrorAction Stop;
+            }
+            catch [Microsoft.Management.Infrastructure.CimException]
+            {
+                $ex = $_.Exception;
+                if ($ex.NativeErrorCode -eq "AlreadyExists")
+                {
+                    Write-Warning $("Skipping scope creation for '{0}' as it already exists on the destination server." -f $scope.ScopeId.ToString());
+                }
+            }
+            catch
+            {
+                throw $_.Exception.Message;
+            }
 
             if (-not $PSBoundParameters.ContainsKey("ExcludeScopeOptions"))
             {
+                $hasDns = $false;
+                $hasRouter = $false;
                 $optVals = @(Get-DhcpServerv4OptionValue @from -ScopeId $scope.ScopeId -All);
                 if ($optVals.Count -gt 0)
                 {
                     foreach ($val in $optVals)
                     {
-                        Set-DhcpServerv4OptionValue @to -ScopeId $scope.ScopeId -OptionId $val.OptionId -Value $val.Value;
+                        if ($val.OptionId -eq 6)
+                        {
+                            $hasDns = $true;
+                        }
+                        elseif ($val.OptionId -eq 3)
+                        {
+                            $hasRouter = $true;
+                        }
+                        try
+                        {
+                            Set-DhcpServerv4OptionValue @to -ScopeId $scope.ScopeId -OptionId $val.OptionId -Value $val.Value @confirmArgs -ErrorAction Stop;
+                        }
+                        catch [Microsoft.Management.Infrastructure.CimException]
+                        {
+                            $ex = $_.Exception;
+                            if ($ex.NativeErrorCode -eq "NotFound")
+                            {
+                                throw $("Option {0} does NOT exist on destination. Run 'Copy-DhcpServerOptionDefinitions' to fix this." -f $val.OptionId);
+                            }
+                        }
                     }
+                }
+                # Check for Option 3 and warn if not present in scope or server options.
+                if ($needRouter -and -not $hasRouter)
+                {
+                    Write-Warning $("Scope '{0}' does not have Option 3 (Router) set for the scope or on the server!" -f $scope.ScopeId);
+                }
+
+                # Check for Option 6 and Warn if not present in scope or server options.
+                if ($needDns -and -not $hasDns)
+                {
+                    Write-Warning $("Scope '{0}' does not have Option 6 (DNS Servers) set for the scope or on the server!" -f $scope.ScopeId);
                 }
             }
         }
@@ -453,27 +516,28 @@ Function Copy-DhcpLease()
     }
     Process
     {
+        $scopeArgs=@{}
         if ($PSBoundParameters.ContainsKey("ScopeId"))
         {
             $sids = $ScopeId.ForEach({$_.ToString()}) -join ', ';
             Write-Verbose "Retrieving leases from $sids..."
-            $allLeases = @(Get-DhcpServerv4Scope @from -ScopeId $ScopeId | Get-DhcpServerv4Lease @from);
+            $scopeArgs.ScopeId = $sids;
         }
         else
         {
             Write-Verbose "Retrieving all scope leases...";
-            $allLeases = @(Get-DhcpServerv4Scope @from | Get-DhcpServerv4Lease @from);
         }
+        $allLeases = @(Get-DhcpServerv4Scope @from @scopeArgs | Get-DhcpServerv4Lease @from);
         $leases = @($allLeases | Where-Object { $_.AddressState -notlike "*Reservation" });
         Write-Progress -Activity "Lease Copy" -Status "Running steps 1/2..." -Id 1 -PercentComplete 50;
-
+        $confirmArgs = @{}
         if ($PSBoundParameters.ContainsKey("Confirm"))
         {
-            $to.Confirm = $PSBoundParameters["Confirm"];
+            $confirmArgs.Confirm = $PSBoundParameters["Confirm"];
         }
         else
         {
-            $to.Confirm = $true;
+            $confirmArgs.Confirm = $true;
         }
         for ($i = 1; $i -le $leases.Count; $i++)
         {
@@ -496,7 +560,23 @@ Function Copy-DhcpLease()
                 ClientId = $lease.ClientId
             };
             Write-Debug "Lease Args: $($leaseArgs | Out-String)";
-            Add-DhcpServerv4Lease @to @leaseArgs;
+            try
+            {
+                
+                Add-DhcpServerv4Lease @to @leaseArgs @confirmArgs -ErrorAction Stop;
+            }
+            catch [Microsoft.Management.Infrastructure.CimException]
+            {
+                $ex = $_.Exception;
+                if ($ex.NativeErrorCode -eq "AlreadyExists")
+                {
+                    Write-Warning $("Skipped {0} ({1}) as {2} is already taken." -f $leaseArgs.HostName, $leaseArgs.ClientId.ToUpper().Replace('-',':'), $leaseArgs.IPAddress);
+                }
+            }
+            catch
+            {
+                throw $_.Exception.Message
+            }
         }
         Write-ScriptProgress -Activity "Leases" -Id 2 -Completed;
 
@@ -504,7 +584,7 @@ Function Copy-DhcpLease()
         if (-not $PSBoundParameters.ContainsKey("ExcludeReservations"))
         {
             Write-Verbose "Now creating any reservations...";
-            $resrv = @($allLeases | Where-Object { $_.AddressState -like "*Reservation" });
+            $resrv = @(Get-DhcpServerv4Scope @from @scopeArgs | Get-DhcpServerv4Reservation @from)
             for ($r = 1; $r -le $resrv.Count; $r++)
             {
                 $res = $resrv[$r - 1];
@@ -519,7 +599,22 @@ Function Copy-DhcpLease()
                     Type = $res.Type
                 };
                 Write-Debug "Reservation Args: $($resArgs | Out-String)";
-                Add-DhcpServerv4Reservation @to @resArgs;
+                try
+                {
+                    Add-DhcpServerv4Reservation @to @resArgs @confirmArgs -ErrorAction Stop;
+                }
+                catch [Microsoft.Management.Infrastructure.CimException]
+                {
+                    $ex = $_.Exception;
+                    if ($ex.NativeErrorCode -eq "AlreadyExists")
+                    {
+                        Write-Warning $("Skipped {0} ({1}) as {2} is already taken." -f $resArgs.Name, $resArgs.ClientId.ToUpper().Replace('-',':'), $resArgs.IPAddress);
+                    }
+                }
+                catch
+                {
+                    throw $_.Exception.Message;
+                }
             }
             Write-ScriptProgress -Activity "Reservations" -Id 3 -Completed;
         }
