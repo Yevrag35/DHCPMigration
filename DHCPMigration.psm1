@@ -1,4 +1,115 @@
 ﻿#region MODULE FUNCTIONS
+Function Copy-DhcpServerClass()
+{
+    [CmdletBinding(SupportsShouldProcess = $true, PositionalBinding = $false, DefaultParameterSetName = "ByCredential")]
+    [alias("copyclasses")]
+    param
+    (
+        [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCredential')]
+        [alias("t", "to")]
+        [string] $ToServer = $env:COMPUTERNAME,
+
+        [parameter(Mandatory=$true, Position=1, ParameterSetName='ByCredential')]
+        [alias("f", "from")]
+        [string] $FromServer,
+
+        [parameter(Mandatory=$false)]
+        [SupportsWildcards]
+        [string[]] $ClassName,
+
+        [parameter(Mandatory=$false)]
+        [ValidateSet("User", "Vendor")]
+        [string[]] $Type = [string[]]@("User", "Vendor"),
+
+        [parameter(Mandatory=$false, ParameterSetName='ByCredential')]
+        [alias("toc")]
+        [pscredential] $ToCredential,
+
+        [parameter(Mandatory=$false, ParameterSetName='ByCredential')]
+        [alias("froc")]
+        [pscredential] $FromCredential,
+
+        [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCimSession')]
+        [alias("tcim")]
+        [Microsoft.Management.Infrastructure.CimSession] $ToCimSession,
+
+        [parameter(Mandatory=$false, Position=1, ParameterSetName='ByCimSession')]
+        [alias("fcim")]
+        [Microsoft.Management.Infrastructure.CimSession] $FromCimSession
+    )
+    Begin
+    {
+        $private:bank = PrepareConnections -SetName $PSCmdlet.ParameterSetName -BoundParameters $PSCmdlet.MyInvocation.BoundParameters;
+        $to = $private:bank.To;
+        $from = $private:bank.From;
+        if ($PSBoundParameters.ContainsKey("Verbose"))
+        {
+            $to.Verbose = $PSBoundParameters["Verbose"];
+        }
+        Write-Debug "To Hash: $($to | Out-String)";
+        Write-Debug "From Hash: $($from | Out-String)";
+    }
+    Process
+    {
+        $getArgs = $from.Clone();
+        if ($PSBoundParameters.ContainsKey("Type"))
+        {
+            $getArgs.Add("Type", $Type);
+        }
+        $allFromClasses = @(Get-DhcpServerv4Class @getArgs);
+        $list = New-Object -TypeName 'System.Collections.Generic.List[object]' $allFromClasses.Count;
+        if ($PSBoundParameters.ContainsKey("ClassName"))
+        {
+            for ($n = 0; $n -lt $ClassName.Length; $n++)
+            {
+                $wcp = New-Object WildcardPattern($ClassName[$n], [System.Management.Automation.WildcardOptions]::IgnoreCase);
+                for ($i = 0; $i -lt $allFromClasses.Count; $i++)
+                {
+                    $fromCls = $allFromClasses[$i];
+                    if ($wcp.IsMatch($fromCls.Name))
+                    {
+                        $list.Add($fromCls);
+                    }
+                }
+            }
+        }
+        else
+        {
+            $list.AddRange($allFromClasses);
+        }
+
+        $allToClasses = @(Get-DhcpServerv4Class @to);
+        for ($p = 0; $p -lt $allToClasses.Count; $p++)
+        {
+            $toCls = $allToClasses[$p];
+            for ($r = $list.Count - 1; $r -ge 0; $r--)
+            {
+                $listCls = $list[$r];
+                if ($toCls.Name -eq $listCls.Name)
+                {
+                    $list.Remove($listCls);
+                }
+            }
+        }
+    }
+    End
+    {
+        for ($v = 1; $v -le $list.Count; $v++)
+        {
+            $copyCls = $list[$v-1];
+            Write-ScriptProgress -Activity "Classes" -Id 0 -On $v -Total $list.Count;
+            $newClassArgs = @{
+                Name = $copyCls.Name
+                Type = $copyCls.Type
+                Data = $copyCls.Data
+                Description = $copyCls.Description
+            }
+            Add-DhcpServerv4Class @newClassArgs @to;
+        }
+        Write-ScriptProgress -Activity Classes -Id 0 -Completed;
+    }
+}
+
 Function Copy-DhcpServerOptionDefinition()
 {
     <#
@@ -32,7 +143,7 @@ Function Copy-DhcpServerOptionDefinition()
         [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCimSession')]
         [alias("tcim")]
         [Microsoft.Management.Infrastructure.CimSession] $ToCimSession,
-        
+
         [parameter(Mandatory=$false, Position=1, ParameterSetName='ByCimSession')]
         [alias("fcim")]
         [Microsoft.Management.Infrastructure.CimSession] $FromCimSession
@@ -130,7 +241,7 @@ Function Copy-DhcpServerOptionValue()
         [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCimSession')]
         [alias("tcim")]
         [Microsoft.Management.Infrastructure.CimSession] $ToCimSession,
-        
+
         [parameter(Mandatory=$false, Position=1, ParameterSetName='ByCimSession')]
         [alias("fcim")]
         [Microsoft.Management.Infrastructure.CimSession] $FromCimSession
@@ -228,7 +339,7 @@ Function Copy-DhcpPolicy()
         [parameter(Mandatory=$false, Position=0, ParameterSetName='ScopePoliciesByCimSession')]
         [alias("tcim")]
         [Microsoft.Management.Infrastructure.CimSession] $ToCimSession,
-        
+
         [parameter(Mandatory=$false, Position=1, ParameterSetName='ServerPoliciesByCimSession')]
         [parameter(Mandatory=$false, Position=0, ParameterSetName='ScopePoliciesByCimSession')]
         [alias("fcim")]
@@ -325,7 +436,7 @@ Function Copy-DhcpScope()
         [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCimSession')]
         [alias("tcim")]
         [Microsoft.Management.Infrastructure.CimSession] $ToCimSession,
-        
+
         [parameter(Mandatory=$false, Position=1, ParameterSetName='ByCimSession')]
         [alias("fcim")]
         [Microsoft.Management.Infrastructure.CimSession] $FromCimSession
@@ -384,7 +495,7 @@ Function Copy-DhcpScope()
                 NapEnable        = $scope.NapEnable
                 NapProfile       = $scope.NapProfile
             };
-            
+
             if ($PSBoundParameters.ContainsKey("RetainStatus"))
             {
                 $addScopeArgs.State = $scope.State;
@@ -495,7 +606,7 @@ Function Copy-DhcpLease()
         [parameter(Mandatory=$false, Position=0, ParameterSetName='ByCimSession')]
         [alias("tcim")]
         [Microsoft.Management.Infrastructure.CimSession] $ToCimSession,
-        
+
         [parameter(Mandatory=$false, Position=1, ParameterSetName='ByCimSession')]
         [alias("fcim")]
         [Microsoft.Management.Infrastructure.CimSession] $FromCimSession
@@ -562,7 +673,7 @@ Function Copy-DhcpLease()
             Write-Debug "Lease Args: $($leaseArgs | Out-String)";
             try
             {
-                
+
                 Add-DhcpServerv4Lease @to @leaseArgs @confirmArgs -ErrorAction Stop;
             }
             catch [Microsoft.Management.Infrastructure.CimException]
@@ -643,7 +754,7 @@ Function PrepareConnections([string]$SetName, [System.Collections.IDictionary]$B
     # }
     $private:fromHash = $private:toHash.Clone();
 
-    if ($SetName -eq "ByCredential")
+    if ($SetName -like "*Credential")
     {
         if ($BoundParameters.ContainsKey("ToCredential"))
         {
@@ -673,7 +784,7 @@ Function PrepareConnections([string]$SetName, [System.Collections.IDictionary]$B
             $private:fromHash.CimSession = $BoundParameters["FromCimSession"];
         }
     }
-    
+
     $private:combined = [pscustomobject]@{
         To = $private:toHash
         From = $private:fromHash
@@ -687,7 +798,7 @@ Function Write-ScriptProgress()
     param
     (
         [parameter(Mandatory = $true)]
-        [ValidateSet("Scopes", "Options", "Reservations", "Leases")]
+        [ValidateSet("Scopes", "Options", "Reservations", "Leases", "Classes")]
         [string] $Activity,
 
         [parameter(Mandatory = $true)]
