@@ -52,7 +52,7 @@ Function Copy-DhcpServerClass()
     Process
     {
         $getArgs = $from.Clone();
-        if ($PSBoundParameters.ContainsKey("Type"))
+        if ($PSBoundParameters.ContainsKey("Type") -and -not $Type.Length -ne 2)
         {
             $getArgs.Add("Type", $Type);
         }
