@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.1.1'
+ModuleVersion = '1.2.0'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -69,7 +69,7 @@ RequiredModules = @('DhcpServer')
 NestedModules = @('DHCPMigration.psm1')
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Copy-DhcpServerOptionDefinition', 'Copy-DhcpServerOptionValue', 
+FunctionsToExport = 'Copy-DhcpServerClass', 'Copy-DhcpServerOptionDefinition', 'Copy-DhcpServerOptionValue',
                'Copy-DhcpPolicy', 'Copy-DhcpScope', 'Copy-DhcpLease'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
@@ -79,7 +79,7 @@ CmdletsToExport = @()
 VariablesToExport = @()
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-AliasesToExport = 'copyoptdefs', 'copyoptvals'
+AliasesToExport = 'copyoptdefs', 'copyoptvals', 'copyclasses'
 
 # DSC resources to export from this module
 # DscResourcesToExport = @()
@@ -116,7 +116,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Fixed confirmation errors; added error handling for existing objects.'
+        ReleaseNotes = 'Fixed Copy-DhcpPolicy bug and introduce ''Copy-DhcpServerClass''.'
 
     } # End of PSData hashtable
 

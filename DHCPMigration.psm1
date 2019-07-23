@@ -54,8 +54,9 @@ Function Copy-DhcpServerClass()
         $getArgs = $from.Clone();
         if ($PSBoundParameters.ContainsKey("Type") -and -not $Type.Length -ne 2)
         {
-            $getArgs.Add("Type", $Type);
+            $getArgs.Add("Type", $Type[0]);
         }
+        Write-Debug "Get Args: $($getArgs | Out-String)";
         $allFromClasses = @(Get-DhcpServerv4Class @getArgs);
         $list = New-Object -TypeName 'System.Collections.Generic.List[object]' $allFromClasses.Count;
         if ($PSBoundParameters.ContainsKey("ClassName"))
@@ -68,7 +69,7 @@ Function Copy-DhcpServerClass()
                     $fromCls = $allFromClasses[$i];
                     if ($wcp.IsMatch($fromCls.Name))
                     {
-                        $list.Add($fromCls);
+                        $list.Add($fromCls) > $null;
                     }
                 }
             }
@@ -87,7 +88,7 @@ Function Copy-DhcpServerClass()
                 $listCls = $list[$r];
                 if ($toCls.Name -eq $listCls.Name)
                 {
-                    $list.Remove($listCls);
+                    $list.Remove($listCls) > $null;
                 }
             }
         }
@@ -841,7 +842,11 @@ Function Write-ScriptProgress()
             }
             "Leases"
             {
-                $Status = "Copying Lease {0}/{1}..."
+                $Status = "Copying Lease {0}/{1}...";
+            }
+            "Classes"
+            {
+                $Status = "Copying Class {0}/{1}...";
             }
         }
         $splat.Status = $Status -f $On, $Total;
