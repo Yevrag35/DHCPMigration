@@ -1,6 +1,9 @@
 ﻿#region MODULE FUNCTIONS
 Function Copy-DhcpServerClass()
 {
+    <#
+        .EXTERNALHELP en-US\DHCPMigration.psm1-Help.xml
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, PositionalBinding = $false, DefaultParameterSetName = "ByCredential")]
     [alias("copyclasses")]
     param
