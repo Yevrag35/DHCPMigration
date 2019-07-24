@@ -104,7 +104,7 @@ PrivateData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
         Tags = @('Dhcp', 'dynamic', 'host', 'configuration', 'protocol', 'migration', 'move', 'scope', 'lease', 'policy', 'policies',
-            'server', 'copy', 'ipv4', 'option', 'id', 'value', 'reservation', 'add', 'get' ,'set')
+            'server', 'copy', 'ipv4', 'option', 'id', 'value', 'reservation', 'add', 'get' ,'set', 'class', 'user', 'vendor')
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/Yevrag35/DHCPMigration/blob/master/LICENSE'
