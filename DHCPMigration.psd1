@@ -116,7 +116,7 @@ PrivateData = @{
         IconUri = 'https://images.yevrag35.com/icons/dhcp_migration.png'
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Fixed Copy-DhcpPolicy bug and introduce ''Copy-DhcpServerClass''.'
+        ReleaseNotes = 'Nothing changed, just messing with the icon.'
 
     } # End of PSData hashtable
 
