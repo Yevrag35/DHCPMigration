@@ -51,14 +51,16 @@ Function Copy-DhcpServerClass() {
     }
     Process {
         $getArgs = $from.Clone()
+
         if ($PSBoundParameters.ContainsKey("Type") -and -not $Type.Length -ne 2) {
+
             $getArgs.Add("Type", $Type[0])
         }
         Write-Debug "Get Args: $($getArgs | Out-String)"
 
         [array] $allFromClasses = Get-DhcpServerv4Class @getArgs
 
-        $list = New-Object -TypeName 'System.Collections.Generic.List[object]' -ArgumentList $allFromClasses.Count
+        $listOfClasses = New-Object -TypeName 'System.Collections.Generic.List[object]' -ArgumentList $allFromClasses.Count
 
         if ($PSBoundParameters.ContainsKey("ClassName")) {
 
@@ -70,22 +72,27 @@ Function Copy-DhcpServerClass() {
 
                     if ($wcp.IsMatch($fromCls.Name)) {
 
-                        $list.Add($fromCls)
+                        $listOfClasses.Add($fromCls)
                     }
                 }
             }
         }
         else {
-            $list.AddRange($allFromClasses)
+
+            $listOfClasses.AddRange($allFromClasses)
         }
 
-        $allToClasses = @(Get-DhcpServerv4Class @to)
-        for ($p = 0; $p -lt $allToClasses.Count; $p++) {
-            $toCls = $allToClasses[$p]
-            for ($r = $list.Count - 1; $r -ge 0; $r--) {
-                $listCls = $list[$r]
+        Write-Debug -Message "Get-DhcpServerv4Class:To`n`n$($to | Out-String)"
+
+        [array] $allToClasses = Get-DhcpServerv4Class @to
+
+        foreach ($toCls in $allToClasses) {
+
+            foreach ($listCls in $listOfClasses) {
+
                 if ($toCls.Name -eq $listCls.Name) {
-                    $list.Remove($listCls) > $null
+
+                    [void] $listOfClasses.Remove($listCls)
                 }
             }
         }
